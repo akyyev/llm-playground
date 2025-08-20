@@ -96,11 +96,11 @@ def main():
     
     ai = RAG("gpt-4o-mini", "vector_db")
 
-    # ai.ask("Can you describe EchmaTech Solutions in a few sentences")
-    # ai.ask("Can you pull up HR notes for David Thompson?")
-    # ai.ask("Is there any empoloyee who is working remotely from South Korea?")
-    # ai.ask("Who received the AcmeTech Brawo award in 2024?")
-    # ai.ask("Who are the people got highest performance review ratings?")
+    ai.ask("Can you describe EchmaTech Solutions in a few sentences")
+    ai.ask("Can you pull up HR notes for David Thompson?")
+    ai.ask("Is there any empoloyee who is working remotely from South Korea?")
+    ai.ask("Who received the AcmeTech Brawo award in 2024?")
+    ai.ask("Who are the people got highest performance review ratings?")
 
 
 if __name__ == "__main__":
