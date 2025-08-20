@@ -2,7 +2,9 @@ import os
 import glob
 from dotenv import load_dotenv
 
-from langchain.document_loaders import DirectoryLoader, TextLoader
+# from langchain.document_loaders import DirectoryLoader
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
+
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.schema import Document
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
@@ -16,7 +18,6 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain_core.callbacks import StdOutCallbackHandler # helps with printing langchain logs
 
 
-
 # Retrieval-augmented generation (RAG) is a technique that enhances the accuracy and 
 # reliability of generative AI models by incorporating information from external knowledge sources. 
 
@@ -25,10 +26,30 @@ os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY', 'your-key-if-not-usin
 
 
 class RAG:
+    
     def __init__(self, aiModel, vectorDbName):
+
         self.aiModel = aiModel
         self.vectorDbName = vectorDbName
+       
+        embeddings = OpenAIEmbeddings()
+
+        if not os.path.exists(self.vectorDbName):
+            self.updateVectorstore()
+        else:
+            self.vectorstore = Chroma(persist_directory=vectorDbName, embedding_function=embeddings)
+
+        llm = ChatOpenAI(temperature=0.7, model_name=aiModel)
+        memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+
+        # the retriever is an abstraction over the VectorStore that will be used during RAG; k is how many chunks to use
+        retriever = self.vectorstore.as_retriever(search_kwargs={"k":25})
         
+        # this line will log chunks to the console, helps to debug issues with llm search
+        # conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory, callbacks=[StdOutCallbackHandler()])
+        self.conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory)
+        
+    def updateVectorstore(self):
         folders = glob.glob("knowledge-base/*")
         text_loader_kwargs = {'encoding': 'utf-8'}
 
@@ -50,26 +71,20 @@ class RAG:
         print('-------------------------------')
 
         embeddings = OpenAIEmbeddings()
-        if os.path.exists(vectorDbName):
-            Chroma(persist_directory=vectorDbName, embedding_function=embeddings).delete_collection()
 
-        vectorstore = Chroma.from_documents(documents=chunks, embedding=embeddings, persist_directory=vectorDbName)
-        print(f"Vectorstore created with {vectorstore._collection.count()} documents")
+        if os.path.exists(self.vectorDbName):
+            Chroma(persist_directory=self.vectorDbName, embedding_function=embeddings).delete_collection()
 
-        # collection = vectorstore._collection
-        # sample_embedding = collection.get(limit=1, include=["embeddings"])["embeddings"][0]
-        # dimensions = len(sample_embedding)
-        # print(f"The vectors have {dimensions:,} dimensions")
+        self.vectorstore = Chroma.from_documents(documents=chunks, embedding=embeddings, persist_directory=self.vectorDbName)
 
-        llm = ChatOpenAI(temperature=0.7, model_name=aiModel)
-        memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+        collection = self.vectorstore._collection
+        sample_embedding = collection.get(limit=1, include=["embeddings"])["embeddings"][0]
+        dimensions = len(sample_embedding)
+        print(f"The vectors have {dimensions:,} dimensions")
+        print(f"Vectorstore created with {self.vectorstore._collection.count()} documents")
 
-        # the retriever is an abstraction over the VectorStore that will be used during RAG; k is how many chunks to use
-        retriever = vectorstore.as_retriever(search_kwargs={"k":25})
-        
-        # this line will log chunks to the console, helps to debug issues with llm search
-        # conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory, callbacks=[StdOutCallbackHandler()])
-        self.conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory)
+
+
         
     def ask(self, question):
         print('-------------------------------')
@@ -81,11 +96,11 @@ def main():
     
     ai = RAG("gpt-4o-mini", "vector_db")
 
-    ai.ask("Can you describe EchmaTech Solutions in a few sentences")
-    ai.ask("Can you pull up HR notes for David Thompson?")
-    ai.ask("Is there any empoloyee who is working remotely from South Korea?")
-    ai.ask("Who received the AcmeTech Brawo award in 2024?")
-    ai.ask("Who are the people got highest performance review ratings?")
+    # ai.ask("Can you describe EchmaTech Solutions in a few sentences")
+    # ai.ask("Can you pull up HR notes for David Thompson?")
+    # ai.ask("Is there any empoloyee who is working remotely from South Korea?")
+    # ai.ask("Who received the AcmeTech Brawo award in 2024?")
+    # ai.ask("Who are the people got highest performance review ratings?")
 
 
 if __name__ == "__main__":
