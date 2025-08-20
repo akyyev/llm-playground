@@ -1,0 +1,11 @@
+torch
+transformers
+bitsandbytes
+python-dotenv # for env variables
+protobuf
+accelerate
+
+langchain
+langchain-openai
+langchain-chroma
+langchain-community
