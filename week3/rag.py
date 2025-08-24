@@ -45,6 +45,10 @@ class RAG:
         # the retriever is an abstraction over the VectorStore that will be used during RAG; k is how many chunks to use
         retriever = self.vectorstore.as_retriever(search_kwargs={"k":25})
         
+        # It’s a component from LangChain (a popular framework for building LLM-powered apps) that:
+        # - Uses a language model (llm) to generate responses
+        # - Pulls relevant documents (retriever) from a knowledge base
+        # - Maintains conversation history (memory) so the AI can respond contextually
         # this line will log chunks to the console, helps to debug issues with llm search
         # conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory, callbacks=[StdOutCallbackHandler()])
         self.conversation_chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory)
@@ -101,6 +105,7 @@ def main():
     ai.ask("Is there any empoloyee who is working remotely from South Korea?")
     ai.ask("Who received the AcmeTech Brawo award in 2024?")
     ai.ask("Who are the people got highest performance review ratings?")
+    ai.ask("Who are the contractors bought InsideAI package?")
 
 
 if __name__ == "__main__":
